@@ -3,17 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Parkview Lab — robotics & AI</title>
-<meta name="description" content="Parkview Lab is a robotics and AI lab building two products — Conception-Space and Zoestum — and the open-source projects behind them.">
-<link rel="icon" href="assets/img/parkview_lab_color_logo_only.svg">
-<link rel="stylesheet" href="assets/style.css">
+<title>Conception-Space — Parkview Lab</title>
+<meta name="description" content="Conception-Space — a Parkview Lab product. Coming soon.">
+<link rel="icon" href="../assets/img/parkview_lab_color_logo_only.svg">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .coming { min-height:52vh; display:flex; flex-direction:column; justify-content:center; }
+  .coming h1 {
+    font-family:var(--display); text-transform:uppercase; letter-spacing:.02em;
+    color:var(--teal-deep); font-size:34px; margin:0 0 18px;
+  }
+  .coming .rule { height:6px; width:140px; background:var(--teal); margin:0 0 22px; }
+  .coming p { font-family:var(--mono); font-size:13px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin:0; }
+  .back { margin-top:32px; }
+</style>
 </head>
 <body>
 <div class="wrap">
 
   <header class="site">
-    <a href="/" aria-label="Parkview Lab home">
-      <!-- Inline brand logo (color, horizontal). Uses the page's self-hosted Michroma; no external font call. -->
+    <a href="../" aria-label="Parkview Lab home">
+      <!-- Full brand lockup (inline; uses the page's self-hosted Michroma). -->
       <svg class="logo" viewBox="0 72 514 148" role="img" xmlns="http://www.w3.org/2000/svg" aria-label="Parkview Lab">
         <defs><style>.wm{font-family:'Michroma',var(--sans);fill:#141414;}.wm-stroke{font-family:'Michroma',var(--sans);fill:none;stroke:#141414;stroke-linejoin:round;}</style></defs>
         <g transform="translate(150,150)">
@@ -56,77 +66,18 @@
       </svg>
     </a>
     <nav class="site">
-      <a href="#projects">Projects</a>
-      <a href="releases/">Releases</a>
+      <a href="../#projects">Projects</a>
+      <a href="../releases/">Releases</a>
       <a href="https://github.com/ParkviewLab">GitHub</a>
     </nav>
   </header>
 
-  <section class="hero">
-    <h1>Robotics &amp; AI</h1>
+  <section class="coming">
+    <h1>Conception-Space</h1>
     <div class="rule"></div>
-    <p class="lede">Parkview Lab is building two products: <a href="conception-space/">Conception-Space</a>
-      and <a href="https://zoestum.ai">Zoestum</a>. This site describes those products, the projects behind
-      them, and the ideas guiding their development.</p>
-    <div class="cta-row">
-      <a class="btn btn-primary" href="releases/">Current releases</a>
-      <a class="btn btn-ghost" href="https://github.com/ParkviewLab">Browse the source</a>
-    </div>
+    <p>Coming soon</p>
+    <div class="back"><a class="btn btn-ghost" href="../">← Parkview Lab</a></div>
   </section>
-
-  <section id="projects">
-    <p class="section-label">The projects</p>
-    <div class="grid">
-
-      <div class="card ac-teal">
-        <h3><a href="https://github.com/ParkviewLab/jonobones">jonobones</a></h3>
-        <p>A headless, Joplin-sync-compatible knowledge daemon — owns a private note store and serves it to
-          local apps over a localhost REST API.</p>
-        <div class="chips"><span class="chip">npm</span><span class="chip">GHCR</span><span class="chip">AGPL-3.0</span></div>
-      </div>
-
-      <div class="card ac-red">
-        <h3><a href="https://github.com/ParkviewLab/deco-assaying">deco-assaying</a></h3>
-        <p>An MCP server for source-code analysis via tree-sitter — symbols, imports, references, and chunks
-          from a local path or a GitHub/GitLab URL.</p>
-        <div class="chips"><span class="chip">PyPI</span><span class="chip">GHCR</span><span class="chip">MIT</span></div>
-      </div>
-
-      <div class="card ac-blue">
-        <h3><a href="https://github.com/ParkviewLab/flint-slating">flint-slating</a></h3>
-        <p>An MCP server that reads PDFs and exposes them as structured, LLM-ready Markdown — headings,
-          reading order, tables, and images.</p>
-        <div class="chips"><span class="chip">PyPI</span><span class="chip">GHCR</span><span class="chip">MIT</span></div>
-      </div>
-
-      <div class="card ac-yellow">
-        <h3><a href="https://github.com/ParkviewLab/smalt-mcp">smalt-mcp</a></h3>
-        <p>A thin MCP wrapper around Smalt's storage surface — read / write / link / claim / search over a
-          markdown + vector store, with tiered permissions.</p>
-        <div class="chips"><span class="chip">PyPI</span><span class="chip">GHCR</span><span class="chip">MIT</span></div>
-      </div>
-
-      <div class="card ac-sage">
-        <h3><a href="https://github.com/ParkviewLab/ebony-enriching">ebony-enriching</a></h3>
-        <p>An MCP lab notebook — an append-only proposal / experiment / gap lifecycle for agents to record
-          and revisit their work.</p>
-        <div class="chips"><span class="chip">PyPI</span><span class="chip">GHCR</span><span class="chip">MIT</span></div>
-      </div>
-
-      <div class="card ac-teal">
-        <h3><a href="releases/">More &amp; current versions →</a></h3>
-        <p>The releases page lists the latest published version of every public project, where it ships, and
-          what each version provides — refreshed automatically on each release.</p>
-        <div class="chips"><span class="chip">live</span></div>
-      </div>
-
-    </div>
-  </section>
-
-  <footer class="site">
-    <span>Parkview Lab</span>
-    <span>Open source on <a href="https://github.com/ParkviewLab">GitHub</a> · packages on <a href="https://github.com/orgs/ParkviewLab/packages">GHCR</a></span>
-  </footer>
 
 </div>
 </body>
