@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parkview Lab — open-source MCP servers & developer tools</title>
+<meta name="description" content="Parkview Lab builds open-source Model Context Protocol (MCP) servers and developer tools for AI-assisted workflows — source analysis, document parsing, knowledge daemons, and storage.">
+<link rel="icon" href="assets/img/parkview_lab_color_logo_only.svg">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="site">
+    <a href="/" aria-label="Parkview Lab home">
+      <!-- Inline brand logo (color, horizontal). Uses the page's self-hosted Michroma; no external font call. -->
+      <svg class="logo" viewBox="0 72 514 148" role="img" xmlns="http://www.w3.org/2000/svg" aria-label="Parkview Lab">
+        <defs><style>.wm{font-family:'Michroma',var(--sans);fill:#141414;}.wm-stroke{font-family:'Michroma',var(--sans);fill:none;stroke:#141414;stroke-linejoin:round;}</style></defs>
+        <g transform="translate(150,150)">
+          <rect x="-88.572067" y="39.569824" width="9" height="28" fill="#90b095"/>
+          <circle cx="-83" cy="10" r="30" fill="#90b095"/><circle cx="-111" cy="20" r="22" fill="#90b095"/>
+          <circle cx="-55" cy="18" r="21" fill="#90b095"/><circle cx="-119" cy="4" r="16" fill="#90b095"/>
+          <circle cx="-47" cy="6" r="15" fill="#90b095"/><circle cx="-99" cy="-14" r="24" fill="#90b095"/>
+          <circle cx="-71" cy="-22" r="20" fill="#90b095"/><circle cx="-103" cy="-32" r="16" fill="#90b095"/>
+          <circle cx="-79" cy="-38" r="15" fill="#90b095"/><circle cx="-59" cy="-14" r="13" fill="#90b095"/>
+          <rect x="-5.820663" y="39.498325" width="6" height="22" fill="#90b095"/>
+          <circle cx="-2" cy="26" r="17" fill="#90b095"/><circle cx="-19" cy="29" r="13" fill="#90b095"/>
+          <circle cx="14" cy="27" r="12" fill="#90b095"/><circle cx="-11" cy="12" r="13" fill="#90b095"/>
+          <circle cx="7" cy="13" r="14" fill="#90b095"/><circle cx="-4.28" cy="-2.71" r="11" fill="#90b095"/>
+          <circle cx="6" cy="-2.14" r="7" fill="#90b095"/>
+          <g transform="matrix(0.84873,0,0,0.84873,-48.5422,6.0416)">
+            <path d="m -16,-78 a 28,28 0 0 1 32,0" fill="none" stroke="#00C2C7" stroke-width="4" stroke-linecap="square"/>
+            <path d="m -28,-88 a 46,46 0 0 1 56,0" fill="none" stroke="#00C2C7" stroke-width="2.5" stroke-linecap="square"/>
+            <polyline points="0,-28 0,-36 0,-62" fill="none" stroke="#00C2C7" stroke-width="6" stroke-linecap="square"/>
+            <polyline points="24,-14 32,-22 53.7,-28" fill="none" stroke="#00C2C7" stroke-width="6" stroke-linecap="square"/>
+            <polyline points="-24,-14 -32,-22 -53.7,-28" fill="none" stroke="#00C2C7" stroke-width="6" stroke-linecap="square"/>
+            <polyline points="0,28 0,35 0,56" fill="none" stroke="#00C2C7" stroke-width="4.5" stroke-linecap="square"/>
+            <polyline points="24,14 30,20 46,28" fill="none" stroke="#00C2C7" stroke-width="4.5" stroke-linecap="square"/>
+            <polyline points="-24,14 -30,20 -46,28" fill="none" stroke="#00C2C7" stroke-width="4.5" stroke-linecap="square"/>
+            <circle cx="0" cy="-62" r="11" fill="#00C2C7"/><circle cx="0" cy="-62" r="5" fill="#004f52"/>
+            <circle cx="53.7" cy="-31" r="11" fill="#00C2C7"/><circle cx="53.7" cy="-31" r="5" fill="#004f52"/>
+            <circle cx="-53.7" cy="-31" r="11" fill="#00C2C7"/><circle cx="-53.7" cy="-31" r="5" fill="#004f52"/>
+            <circle cx="0" cy="56" r="9" fill="#00C2C7"/><circle cx="0" cy="56" r="4" fill="#004f52"/>
+            <circle cx="46" cy="28" r="9" fill="#00C2C7"/><circle cx="46" cy="28" r="4" fill="#004f52"/>
+            <circle cx="-46" cy="28" r="9" fill="#00C2C7"/><circle cx="-46" cy="28" r="4" fill="#004f52"/>
+            <polygon points="0,-28 24,-14 24,14 0,28 -24,14 -24,-14" fill="#00C2C7"/>
+            <polygon points="0,-23 20,-11.5 20,11.5 0,23 -20,11.5 -20,-11.5" fill="#004f52"/>
+            <line x1="0" y1="-23" x2="0" y2="23" stroke="#00C2C7" stroke-width="3" stroke-linecap="square"/>
+          </g>
+        </g>
+        <text x="248" y="166" class="wm-stroke" font-size="36" letter-spacing="2" stroke-width="1.2">PARKVIEW</text>
+        <text x="248" y="166" class="wm" font-size="36" letter-spacing="2">PARKVIEW</text>
+        <polygon points="248,178 514,178 511,181 248,181" fill="#00C2C7"/>
+        <text x="248" y="206" class="wm-stroke" font-size="20" letter-spacing="6" stroke-width="1.2">LAB</text>
+        <text x="248" y="206" class="wm" font-size="20" letter-spacing="6">LAB</text>
+      </svg>
+    </a>
+    <nav class="site">
+      <a href="#projects">Projects</a>
+      <a href="releases/">Releases</a>
+      <a href="https://github.com/ParkviewLab">GitHub</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>Open-source MCP servers<br>&amp; developer tools</h1>
+    <div class="rule"></div>
+    <p class="lede">Parkview Lab builds small, sharp tools for AI-assisted software work — most of them
+      <a href="https://modelcontextprotocol.io">Model Context Protocol</a> servers that give agents structured
+      access to code, documents, and knowledge.</p>
+    <p class="sub">Each ships as an installable package and a container image, under a permissive license,
+      with a tag-driven release pipeline. Pick one up with a single command.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="releases/">Current releases</a>
+      <a class="btn btn-ghost" href="https://github.com/ParkviewLab">Browse the source</a>
+    </div>
+  </section>
+
+  <section id="projects">
+    <p class="section-label">The projects</p>
+    <div class="grid">
+
+      <div class="card ac-teal">
+        <h3><a href="https://github.com/ParkviewLab/jonobones">jonobones</a></h3>
+        <p>A headless, Joplin-sync-compatible knowledge daemon — owns a private note store and serves it to
+          local apps over a localhost REST API.</p>
+        <div class="chips"><span class="chip">npm</span><span class="chip">GHCR</span><span class="chip">AGPL-3.0</span></div>
+      </div>
+
+      <div class="card ac-red">
+        <h3><a href="https://github.com/ParkviewLab/deco-assaying">deco-assaying</a></h3>
+        <p>An MCP server for source-code analysis via tree-sitter — symbols, imports, references, and chunks
+          from a local path or a GitHub/GitLab URL.</p>
+        <div class="chips"><span class="chip">PyPI</span><span class="chip">GHCR</span><span class="chip">MIT</span></div>
+      </div>
+
+      <div class="card ac-blue">
+        <h3><a href="https://github.com/ParkviewLab/flint-slating">flint-slating</a></h3>
+        <p>An MCP server that reads PDFs and exposes them as structured, LLM-ready Markdown — headings,
+          reading order, tables, and images.</p>
+        <div class="chips"><span class="chip">PyPI</span><span class="chip">GHCR</span><span class="chip">MIT</span></div>
+      </div>
+
+      <div class="card ac-yellow">
+        <h3><a href="https://github.com/ParkviewLab/smalt-mcp">smalt-mcp</a></h3>
+        <p>A thin MCP wrapper around Smalt's storage surface — read / write / link / claim / search over a
+          markdown + vector store, with tiered permissions.</p>
+        <div class="chips"><span class="chip">PyPI</span><span class="chip">GHCR</span><span class="chip">MIT</span></div>
+      </div>
+
+      <div class="card ac-sage">
+        <h3><a href="https://github.com/ParkviewLab/ebony-enriching">ebony-enriching</a></h3>
+        <p>An MCP lab notebook — an append-only proposal / experiment / gap lifecycle for agents to record
+          and revisit their work.</p>
+        <div class="chips"><span class="chip">PyPI</span><span class="chip">GHCR</span><span class="chip">MIT</span></div>
+      </div>
+
+      <div class="card ac-teal">
+        <h3><a href="releases/">More &amp; current versions →</a></h3>
+        <p>The releases page lists the latest published version of every public project, where it ships, and
+          what each version provides — refreshed automatically on each release.</p>
+        <div class="chips"><span class="chip">live</span></div>
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="site">
+    <span>Parkview Lab</span>
+    <span>Open source on <a href="https://github.com/ParkviewLab">GitHub</a> · packages on <a href="https://github.com/orgs/ParkviewLab/packages">GHCR</a></span>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# Secrets — never commit. (Guard against the kinds of files that must not leak.)
+*recovery_codes*
+*.pem
+*.key
+*.p12
+.env
+.env.*
+*credentials*
+*secret*
+*.token
+
+# Editor / OS cruft
+*.swp
+Thumbs.db
