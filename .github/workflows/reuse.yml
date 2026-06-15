@@ -1,0 +1,22 @@
+name: REUSE
+
+# REUSE/SPDX compliance — the one required check on a website repo. Runs on the
+# website branch names (live, staging). See the handbook's licensing.md and website.md.
+
+on:
+  pull_request:
+    branches: [live, staging]
+  push:
+    branches: [live, staging]
+
+permissions:
+  contents: read
+
+jobs:
+  reuse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v8.1.0
+      - name: reuse lint
+        run: uvx --from "reuse[charset-normalizer]" reuse lint

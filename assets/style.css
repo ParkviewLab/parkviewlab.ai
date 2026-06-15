@@ -7,6 +7,10 @@
    Michroma is self-hosted (assets/fonts/) — no external font calls.
    =========================================================================== */
 
+/*
+SPDX-FileCopyrightText: 2026 Gary Frattarola <garyf@parkviewlab.ai>
+SPDX-License-Identifier: LicenseRef-AllRightsReserved
+*/
 @font-face {
   font-family: 'Michroma';
   font-style: normal;
@@ -105,8 +109,13 @@ nav.site a:hover { color:var(--red); }
 footer.site {
   margin-top:72px; border-top:3px solid var(--ink); padding-top:22px;
   font-family:var(--mono); font-size:12px; color:var(--muted); letter-spacing:.03em;
+  display:flex; flex-direction:column; gap:12px;
+}
+footer.site .foot-row {
   display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;
 }
+footer.site .foot-legal { color:var(--muted); }
+footer.site .foot-updated { white-space:nowrap; }
 footer.site a { color:var(--teal-deep); }
 
 /* ---- Responsive ---- */

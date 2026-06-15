@@ -1,40 +1,47 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Gary Frattarola <garyf@parkviewlab.ai>
+# SPDX-License-Identifier: LicenseRef-AllRightsReserved
 """
 ParkviewLab releases page builder.
 
-Each run:
-  1. Fetches the latest published version of every tracked project (PyPI / npm).
-  2. Reads the most recent parkviewlab-releases_v<N>.html in this folder.
-  3. If no version changed -> does nothing (prints a one-line "no changes").
-     If a version changed   -> renders a fresh page, writes it as the next
-                               _v<N+1>.html, and git-commits it.
-  4. Reports any public repo in the ParkviewLab org that isn't tracked yet
-     (it does NOT add it automatically).
+Renders releases/index.html — the "current releases" page. Each run fetches the
+latest published version of every tracked project (PyPI / npm). Curated projects
+(PROJECTS) get a full card plus a summary-table row; any *other* public repo in
+the org (minus DENYLIST) gets a summary-table row only — so a newly-released
+project shows up automatically and a human can promote it to a full card later
+(the hybrid model; see the handbook's website.md).
+
+The page is a build artifact: rendered fresh at deploy (and by the local preview,
+scripts/preview.sh) and NOT committed to git (.gitignore'd). Per-page "updated on"
+dates are stamped separately by scripts/stamp.py.
 
 Stdlib only (Python 3.9+). No third-party dependencies.
 
 Usage:
-    python3 build.py            # check + bump + commit if anything changed
-    python3 build.py --push     # ...and `git push` afterwards
-    python3 build.py --check    # report only; never write or commit
-    python3 build.py --force    # re-render to the next version even if unchanged
+    python3 build.py            # render releases/index.html
+    python3 build.py --check    # report versions + discovered repos; write nothing
 
-Adding a project later: append an entry to PROJECTS below. That's the only edit.
+Adding a project as a full card: append an entry to PROJECTS below.
 """
 
 import argparse
 import datetime as dt
-import glob
 import json
 import os
-import re
-import subprocess
 import sys
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ORG = "ParkviewLab"
 UA = {"User-Agent": "parkviewlab-releases-builder"}
+
+# Visible footer copyright (matches the per-file SPDX headers).
+COPYRIGHT = "Copyright © 2026 Gary Frattarola"
+CONTACT = "garyf@parkviewlab.ai"
+
+# Public org repos that are NOT shippable products, so they're never listed:
+# the websites themselves, the docs handbook, shared dev tooling, the desktop GUI.
+DENYLIST = {"parkviewlab.ai", "zoestum.ai", "handbook", "dev-tools", "pvl-dotview"}
 
 # ---------------------------------------------------------------------------
 # Tracked projects. `source` is how we discover the current published version:
@@ -70,7 +77,7 @@ PROJECTS = [
         "accent": "ac-red",
         "source": ("pypi", "deco-assaying"),
         "registry_table": "PyPI · GHCR",
-        "license": "MIT",
+        "license": "MIT OR Apache-2.0",
         "tagline": "MCP server for source-code analysis via tree-sitter (Python/C/C++ initially, broader coverage planned).",
         "package_chip": '<span class="chip">PyPI: <a href="https://pypi.org/project/deco-assaying/">deco-assaying</a></span>',
         "install": "uvx deco-assaying",
@@ -142,6 +149,10 @@ PROJECTS = [
 # generated from PROJECTS so the design lives in exactly one place.
 # ---------------------------------------------------------------------------
 HEAD = """<!DOCTYPE html>
+<!--
+SPDX-FileCopyrightText: 2026 Gary Frattarola <garyf@parkviewlab.ai>
+SPDX-License-Identifier: LicenseRef-AllRightsReserved
+-->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -235,7 +246,7 @@ HEAD = """<!DOCTYPE html>
   .note strong{color:var(--ink);font-family:var(--display);font-size:11px;text-transform:uppercase;
         letter-spacing:.08em;display:inline-block;margin-right:6px;}
   footer{margin-top:30px;color:var(--muted);font-size:12px;text-align:center;font-family:var(--mono);
-         letter-spacing:.04em;}
+         letter-spacing:.04em;line-height:1.9;}
   footer a{color:var(--teal-deep);}
 </style>
 </head>
@@ -348,8 +359,9 @@ TAIL = """
   </div>
 
   <footer>
-    Versions sourced from PyPI and the npm registry · images on
-    <a href="https://github.com/orgs/ParkviewLab/packages">GHCR</a> · released via tag-driven CI on <code>v*</code> tags.
+    <div>Versions sourced from PyPI and the npm registry · images on
+    <a href="https://github.com/orgs/ParkviewLab/packages">GHCR</a> · released via tag-driven CI on <code>v*</code> tags.</div>
+    <div>__COPYRIGHT__ · <a href="mailto:__CONTACT__">__CONTACT__</a> · This page updated on __UPDATED__</div>
   </footer>
 </div>
 </body>
@@ -366,81 +378,40 @@ def _get_json(url):
         return json.load(r)
 
 
-def fetch_latest(project):
-    """Return (version, iso_date) for a project, or (None, None) on failure."""
-    kind, pkg = project["source"]
+def _fetch_registry(kind, pkg):
+    """Return (version, iso_date) from PyPI/npm, or (None, None). Quiet — used for probing."""
     try:
         if kind == "pypi":
             d = _get_json(f"https://pypi.org/pypi/{pkg}/json")
             ver = d["info"]["version"]
             files = d["releases"].get(ver) or []
-            date = files[0]["upload_time_iso_8601"][:10] if files else ""
-            return ver, date
-        elif kind == "npm":
+            return ver, (files[0]["upload_time_iso_8601"][:10] if files else "")
+        if kind == "npm":
             d = _get_json(f"https://registry.npmjs.org/{pkg}")
             ver = d["dist-tags"]["latest"]
-            date = (d.get("time", {}).get(ver) or "")[:10]
-            return ver, date
-    except Exception as e:  # noqa: BLE001
-        print(f"  ! could not fetch {project['slug']} ({kind}:{pkg}): {e}", file=sys.stderr)
+            return ver, (d.get("time", {}).get(ver) or "")[:10]
+    except Exception:  # noqa: BLE001
+        return None, None
     return None, None
 
 
-def latest_page():
-    """Return (path, N) of the highest-numbered existing page, or (None, 0)."""
-    best, best_n = None, 0
-    for f in glob.glob(os.path.join(HERE, "parkviewlab-releases_v*.html")):
-        m = re.search(r"_v(\d+)\.html$", f)
-        if m and int(m.group(1)) >= best_n:
-            best_n, best = int(m.group(1)), f
-    return best, best_n
+def fetch_latest(project):
+    """Version for a curated project; prints on failure."""
+    kind, pkg = project["source"]
+    ver, date = _fetch_registry(kind, pkg)
+    if ver is None:
+        print(f"  ! could not fetch {project['slug']} ({kind}:{pkg})", file=sys.stderr)
+    return ver, date
 
 
-def versions_in(html):
-    """Parse the version currently shown for each project from a rendered page."""
-    out = {}
-    for p in PROJECTS:
-        slug = p["slug"]
-        m = re.search(
-            r'href="https://github\.com/ParkviewLab/' + re.escape(slug) + r'">'
-            + re.escape(slug) + r'</a> <span class="badge">v([^<]+)</span>',
-            html,
-        )
-        if m:
-            out[slug] = m.group(1)
-    return out
+def discover_extras(curated):
+    """Public org repos that are neither curated nor denylisted → table-only rows.
 
-
-def human_date(d):
-    # "12 June 2026" without zero-padding the day, portably.
-    return f"{d.day} {d:%B %Y}"
-
-
-def render(projects, updated):
-    rows = "".join(ROW_TMPL.format(**p) for p in projects)
-    cards = "".join(CARD_TMPL.format(**p) for p in projects)
-    return HEAD.replace("__UPDATED__", updated) + TABLE_OPEN + rows + TABLE_CLOSE + cards + TAIL
-
-
-def git(*args):
-    return subprocess.run(["git", "-C", HERE, *args], capture_output=True, text=True)
-
-
-def commit(path, message):
-    if not os.path.isdir(os.path.join(HERE, ".git")):
-        print("  (not a git repo — skipping commit; run `git init` here to enable history)")
-        return
-    git("add", os.path.basename(path))
-    r = git("commit", "-m", message)
-    if r.returncode == 0:
-        print(f"  committed: {message}")
-    else:
-        print("  git commit said:", (r.stdout + r.stderr).strip())
-
-
-def report_untracked_repos():
-    """Flag public org repos that aren't tracked. Never adds them."""
-    tracked = {p["slug"] for p in PROJECTS}
+    Each gets a version probed from PyPI then npm (the org convention: package
+    name == repo name); if neither has it, the row links to the repo on GitHub.
+    Returns dicts shaped for ROW_TMPL. Fully automatic listing is intentionally
+    avoided — see the DENYLIST and the handbook's website.md (hybrid model).
+    """
     token = os.environ.get("GITHUB_TOKEN")
     headers = dict(UA)
     if token:
@@ -453,79 +424,82 @@ def report_untracked_repos():
         with urllib.request.urlopen(req, timeout=30) as r:
             repos = json.load(r)
     except Exception as e:  # noqa: BLE001
-        print(f"  (skipped new-repo check: {e})")
-        return
-    new = [r["name"] for r in repos
-           if isinstance(r, dict) and not r.get("private") and not r.get("archived")
-           and r["name"] not in tracked]
-    if new:
-        print("\n  NEW public repos in the org, NOT on the page (add to PROJECTS to include):")
-        for n in sorted(new):
-            print(f"    - {n}  (https://github.com/{ORG}/{n})")
+        print(f"  (skipped org repo discovery: {e})", file=sys.stderr)
+        return []
+    extras = []
+    for repo in sorted((x for x in repos if isinstance(x, dict)), key=lambda x: x.get("name", "")):
+        name = repo.get("name", "")
+        if repo.get("private") or repo.get("archived"):
+            continue
+        if name in curated or name in DENYLIST:
+            continue
+        ver = date = reg = None
+        for kind in ("pypi", "npm"):
+            ver, date = _fetch_registry(kind, name)
+            if ver:
+                reg = "PyPI" if kind == "pypi" else "npm"
+                break
+        extras.append({
+            "slug": name,
+            "version": ver or "—",
+            "date": date or "—",
+            "registry_table": reg or f'<a href="https://github.com/{ORG}/{name}">GitHub</a>',
+        })
+        print(f"  + discovered (table-only): {name}  {ver or '—'}  {reg or 'GitHub'}")
+    if not extras:
+        print("  (no untracked public product repos — all are curated or denylisted)")
+    return extras
+
+
+def human_date(d):
+    # "June 1, 2026" — month name, no zero-padded day, portably.
+    return f"{d:%B} {d.day}, {d.year}"
+
+
+def render(projects, extras, updated):
+    rows = "".join(ROW_TMPL.format(**p) for p in projects)
+    rows += "".join(ROW_TMPL.format(**e) for e in extras)
+    cards = "".join(CARD_TMPL.format(**p) for p in projects)
+    page = HEAD + TABLE_OPEN + rows + TABLE_CLOSE + cards + TAIL
+    return (
+        page.replace("__UPDATED__", updated)
+        .replace("__COPYRIGHT__", COPYRIGHT)
+        .replace("__CONTACT__", CONTACT)
+    )
 
 
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 def main():
-    ap = argparse.ArgumentParser(description="Build/bump the ParkviewLab releases page.")
-    ap.add_argument("--push", action="store_true", help="git push after committing")
-    ap.add_argument("--check", action="store_true", help="report only; do not write or commit")
-    ap.add_argument("--force", action="store_true", help="write the next version even if unchanged")
+    ap = argparse.ArgumentParser(description="Render the ParkviewLab releases page.")
+    ap.add_argument("--check", action="store_true", help="report only; write nothing")
     args = ap.parse_args()
 
     today = dt.date.today()
     print(f"ParkviewLab releases build — {today.isoformat()}")
 
-    # Fetch current published versions.
+    # Curated projects → full cards + table rows.
     projects = []
     for p in PROJECTS:
         ver, date = fetch_latest(p)
         if ver is None:
             print(f"  ! aborting: missing data for {p['slug']}", file=sys.stderr)
             return 2
-        q = dict(p, version=ver, date=date)
-        projects.append(q)
-        print(f"  {p['slug']:<16} {ver:<10} {date}")
+        projects.append(dict(p, version=ver, date=date))
+        print(f"  {p['slug']:<16} {ver:<16} {date}")
 
-    # Stable output: releases/index.html (served by GitHub Pages at /releases/).
-    # git history is the version trail — no more _vN files.
-    out_path = os.path.join(HERE, "releases", "index.html")
-    exists = os.path.exists(out_path)
-    prev_versions = versions_in(open(out_path, encoding="utf-8").read()) if exists else {}
-
-    changes = [(q["slug"], prev_versions.get(q["slug"]), q["version"])
-               for q in projects if prev_versions.get(q["slug"]) != q["version"]]
-
-    report_untracked_repos()
-
-    if exists and not changes and not args.force:
-        print(f"\nNo new ParkviewLab releases as of {today.isoformat()}. (current: releases/index.html)")
-        return 0
+    # Other public org repos → table-only rows (or none, if all denylisted).
+    extras = discover_extras({p["slug"] for p in PROJECTS})
 
     if args.check:
-        if changes:
-            print("\nChanges detected (check mode, nothing written):")
-            for slug, old, new in changes:
-                print(f"  {slug}: {old or '—'} -> {new}")
         return 0
 
+    out_path = os.path.join(HERE, "releases", "index.html")
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
-        f.write(render(projects, human_date(today)))
-    print(f"\nWrote releases/index.html")
-
-    if changes:
-        summary = ", ".join(f"{s} {old or '—'}→{new}" for s, old, new in changes)
-        msg = f"releases: {summary}"
-    else:
-        msg = "releases: initial page" if not exists else "releases: rebuild"
-    commit(out_path, msg)
-
-    if args.push:
-        r = git("push")
-        print("  git push:", (r.stdout + r.stderr).strip() or "ok")
-
+        f.write(render(projects, extras, human_date(today)))
+    print("\nwrote releases/index.html")
     return 0
 
 
