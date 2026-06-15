@@ -11,6 +11,11 @@ the org (minus DENYLIST) gets a summary-table row only — so a newly-released
 project shows up automatically and a human can promote it to a full card later
 (the hybrid model; see the handbook's website.md).
 
+For a project that publishes **GitHub Releases**, the card shows that release's
+real per-version notes (the body, rendered from Markdown), with links to the
+Release and CHANGELOG. Projects that don't publish Releases yet fall back to a
+surface summary written from their README.
+
 The page is a build artifact: rendered fresh at deploy (and by the local preview,
 scripts/preview.sh) and NOT committed to git (.gitignore'd). Per-page "updated on"
 dates are stamped separately by scripts/stamp.py.
@@ -26,8 +31,10 @@ Adding a project as a full card: append an entry to PROJECTS below.
 
 import argparse
 import datetime as dt
+import html
 import json
 import os
+import re
 import sys
 import urllib.request
 
@@ -226,9 +233,19 @@ SPDX-License-Identifier: LicenseRef-AllRightsReserved
   .section-label{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.12em;
         color:var(--muted);margin:20px 0 8px;font-weight:600;display:flex;align-items:center;gap:8px;}
   .section-label::before{content:"";width:10px;height:10px;background:var(--ac);display:inline-block;}
+  .section-label a{color:var(--teal-deep);text-decoration:none;}
+  .section-label a:hover{color:var(--red);}
   .summary-box{background:#fff;border:1px solid #e0d8c6;border-left:5px solid var(--ac);
         padding:13px 16px;font-size:14.5px;color:#33372f;}
   .summary-box code{font-family:var(--mono);font-size:12.5px;background:var(--paper-2);padding:1px 5px;}
+  .summary-box p{margin:0 0 8px;}
+  .summary-box p:last-child{margin-bottom:0;}
+  .summary-box ul{margin:0 0 8px;padding-left:18px;}
+  .summary-box li{margin:3px 0;}
+  .summary-box a{color:var(--teal-deep);}
+  .summary-box .rn-h{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;
+        letter-spacing:.1em;color:var(--muted);font-weight:600;margin:12px 0 5px;}
+  .summary-box .rn-h:first-child{margin-top:0;}
   pre{background:var(--code);border:0;padding:14px 16px;overflow-x:auto;margin:8px 0 0;}
   pre code{font-family:var(--mono);font-size:12.5px;color:var(--code-text);line-height:1.7;}
   pre .c{color:var(--sage);}      /* comment */
@@ -326,36 +343,13 @@ ROW_TMPL = (
     '<td class="ver">{version}</td><td>{date}</td><td class="reg">{registry_table}</td></tr>\n'
 )
 
-CARD_TMPL = """
-  <!-- {slug} -->
-  <div class="card {accent}">
-    <h2><a href="https://github.com/ParkviewLab/{slug}">{slug}</a> <span class="badge">v{version}</span></h2>
-    <p class="tagline">{tagline}</p>
-    <div class="meta">
-      <span class="chip">Released {date}</span>
-      <span class="chip">{license}</span>
-      {package_chip}
-      <span class="chip"><a href="https://github.com/ParkviewLab/{slug}/pkgs/container/{slug}">container image</a></span>
-    </div>
-    <div class="section-label">What this version provides</div>
-    <div class="summary-box">
-      {summary}
-    </div>
-    <div class="section-label">Install</div>
-    <pre><code>{install}
-<span class="c"># or</span>
-docker pull ghcr.io/parkviewlab/{slug}:latest</code></pre>
-  </div>
-"""
-
 TAIL = """
   <div class="note">
-    <strong>About the summaries</strong> These projects publish git tags and packages, but do not currently
-    publish GitHub Releases or maintain CHANGELOG files, so there are no formal per-version release notes to
-    quote. The “What this version provides” text summarizes each project's own README (including its “Status”
-    section where present) and describes the current shipped surface — not a diff of what changed in this
-    specific version. To put true per-release notes on this page, publish a GitHub Release (or keep a CHANGELOG)
-    for each tag and the notes can be pulled in automatically.
+    <strong>About these notes</strong> Where a project publishes
+    <a href="https://github.com/orgs/ParkviewLab/repositories">GitHub Releases</a>, its per-version
+    release notes are shown above, pulled from the latest release (and linked to the full Release and
+    CHANGELOG). For projects that don't publish them yet, the summary describes the current shipped
+    surface from the project's README — not a per-version diff.
   </div>
 
   <footer>
@@ -370,12 +364,26 @@ TAIL = """
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Fetch helpers
 # ---------------------------------------------------------------------------
 def _get_json(url):
     req = urllib.request.Request(url, headers=UA)
     with urllib.request.urlopen(req, timeout=30) as r:
         return json.load(r)
+
+
+def _gh_json(url):
+    """GET a GitHub API URL with optional auth; return parsed JSON or None (quiet)."""
+    headers = dict(UA)
+    token = os.environ.get("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    try:
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.load(r)
+    except Exception:  # noqa: BLE001  (404 / network → treat as "not available")
+        return None
 
 
 def _fetch_registry(kind, pkg):
@@ -404,6 +412,20 @@ def fetch_latest(project):
     return ver, date
 
 
+def fetch_release(slug):
+    """Latest GitHub Release for a repo, or None if it publishes none."""
+    d = _gh_json(f"https://api.github.com/repos/{ORG}/{slug}/releases/latest")
+    if d and d.get("tag_name"):
+        return {"tag": d["tag_name"], "body": d.get("body") or "", "url": d.get("html_url") or ""}
+    return None
+
+
+def has_changelog(slug):
+    """True if the repo keeps a CHANGELOG.md."""
+    d = _gh_json(f"https://api.github.com/repos/{ORG}/{slug}/contents/CHANGELOG.md")
+    return bool(d and d.get("name") == "CHANGELOG.md")
+
+
 def discover_extras(curated):
     """Public org repos that are neither curated nor denylisted → table-only rows.
 
@@ -412,19 +434,9 @@ def discover_extras(curated):
     Returns dicts shaped for ROW_TMPL. Fully automatic listing is intentionally
     avoided — see the DENYLIST and the handbook's website.md (hybrid model).
     """
-    token = os.environ.get("GITHUB_TOKEN")
-    headers = dict(UA)
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
-    try:
-        req = urllib.request.Request(
-            f"https://api.github.com/orgs/{ORG}/repos?per_page=100&type=public",
-            headers=headers,
-        )
-        with urllib.request.urlopen(req, timeout=30) as r:
-            repos = json.load(r)
-    except Exception as e:  # noqa: BLE001
-        print(f"  (skipped org repo discovery: {e})", file=sys.stderr)
+    repos = _gh_json(f"https://api.github.com/orgs/{ORG}/repos?per_page=100&type=public")
+    if not repos:
+        print("  (skipped org repo discovery: GitHub API unavailable)", file=sys.stderr)
         return []
     extras = []
     for repo in sorted((x for x in repos if isinstance(x, dict)), key=lambda x: x.get("name", "")):
@@ -451,6 +463,96 @@ def discover_extras(curated):
     return extras
 
 
+# ---------------------------------------------------------------------------
+# Rendering
+# ---------------------------------------------------------------------------
+def _inline(text):
+    """Inline Markdown → HTML on already-escaped text: code, bold, links."""
+    text = html.escape(text, quote=False)
+    text = re.sub(r"`([^`]+)`", r"<code>\1</code>", text)
+    text = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", text)
+    text = re.sub(r"\[([^\]]+)\]\((https?://[^)\s]+)\)", r'<a href="\2">\1</a>', text)
+    return text
+
+
+def md_to_html(md):
+    """Render the small Markdown subset GitHub release bodies use (git-cliff output):
+    `## ` version headings (dropped — the card badge already shows it), `### ` section
+    headings, paragraphs, and `- `/`* ` bullet lists, with inline code/bold/links."""
+    out, para, items = [], [], []
+
+    def flush_para():
+        if para:
+            out.append("<p>" + _inline(" ".join(para).strip()) + "</p>")
+            para.clear()
+
+    def flush_list():
+        if items:
+            out.append("<ul>" + "".join(f"<li>{_inline(i)}</li>" for i in items) + "</ul>")
+            items.clear()
+
+    for raw in md.replace("\r\n", "\n").split("\n"):
+        s = raw.strip()
+        if not s:
+            flush_para(); flush_list(); continue
+        if s.startswith("## "):           # top version line — redundant with the badge
+            flush_para(); flush_list(); continue
+        if s.startswith("### "):
+            flush_para(); flush_list()
+            out.append(f'<div class="rn-h">{_inline(s[4:].strip())}</div>')
+            continue
+        if s.startswith("- ") or s.startswith("* "):
+            flush_para()
+            items.append(s[2:].strip())
+            continue
+        para.append(s)
+    flush_para(); flush_list()
+    return "\n      ".join(out)
+
+
+def build_card(p):
+    """One project card. Shows real GitHub release notes when present, else the
+    README surface summary."""
+    chips = [
+        f'<span class="chip">Released {p["date"]}</span>',
+        f'<span class="chip">{p["license"]}</span>',
+        p["package_chip"],
+        f'<span class="chip"><a href="https://github.com/{ORG}/{p["slug"]}/pkgs/container/{p["slug"]}">container image</a></span>',
+    ]
+    rel = p.get("release")
+    if rel:
+        chips.append(f'<span class="chip"><a href="{rel["url"]}">release notes</a></span>')
+    if p.get("has_changelog"):
+        chips.append(f'<span class="chip"><a href="https://github.com/{ORG}/{p["slug"]}/blob/main/CHANGELOG.md">changelog</a></span>')
+    meta = "\n      ".join(chips)
+
+    if rel and rel["body"].strip():
+        label = f'Release notes <a href="{rel["url"]}">{html.escape(rel["tag"])} &#8599;</a>'
+        body = md_to_html(rel["body"])
+    else:
+        label = "What this version provides"
+        body = p["summary"]
+
+    return f"""
+  <!-- {p["slug"]} -->
+  <div class="card {p["accent"]}">
+    <h2><a href="https://github.com/{ORG}/{p["slug"]}">{p["slug"]}</a> <span class="badge">v{p["version"]}</span></h2>
+    <p class="tagline">{p["tagline"]}</p>
+    <div class="meta">
+      {meta}
+    </div>
+    <div class="section-label">{label}</div>
+    <div class="summary-box">
+      {body}
+    </div>
+    <div class="section-label">Install</div>
+    <pre><code>{p["install"]}
+<span class="c"># or</span>
+docker pull ghcr.io/parkviewlab/{p["slug"]}:latest</code></pre>
+  </div>
+"""
+
+
 def human_date(d):
     # "June 1, 2026" — month name, no zero-padded day, portably.
     return f"{d:%B} {d.day}, {d.year}"
@@ -459,7 +561,7 @@ def human_date(d):
 def render(projects, extras, updated):
     rows = "".join(ROW_TMPL.format(**p) for p in projects)
     rows += "".join(ROW_TMPL.format(**e) for e in extras)
-    cards = "".join(CARD_TMPL.format(**p) for p in projects)
+    cards = "".join(build_card(p) for p in projects)
     page = HEAD + TABLE_OPEN + rows + TABLE_CLOSE + cards + TAIL
     return (
         page.replace("__UPDATED__", updated)
@@ -479,15 +581,18 @@ def main():
     today = dt.date.today()
     print(f"ParkviewLab releases build — {today.isoformat()}")
 
-    # Curated projects → full cards + table rows.
+    # Curated projects → full cards + table rows. Pull real release notes where published.
     projects = []
     for p in PROJECTS:
         ver, date = fetch_latest(p)
         if ver is None:
             print(f"  ! aborting: missing data for {p['slug']}", file=sys.stderr)
             return 2
-        projects.append(dict(p, version=ver, date=date))
-        print(f"  {p['slug']:<16} {ver:<16} {date}")
+        rel = fetch_release(p["slug"])
+        proj = dict(p, version=ver, date=date, release=rel, has_changelog=has_changelog(p["slug"]))
+        projects.append(proj)
+        notes = f"release notes {rel['tag']}" if rel else "README summary"
+        print(f"  {p['slug']:<16} {ver:<16} {date}   [{notes}]")
 
     # Other public org repos → table-only rows (or none, if all denylisted).
     extras = discover_extras({p["slug"] for p in PROJECTS})
