@@ -60,9 +60,7 @@ PROJECTS = [
         "slug": "jonobones",
         "accent": "ac-teal",
         "source": ("npm", "jonobones"),
-        "registry_table": "npm · GHCR",
-        "license": "AGPL-3.0-or-later",
-        "tagline": "A headless, Joplin-sync-compatible knowledge daemon.",
+        "registry_table": "npm · GHCR",        "tagline": "A headless, Joplin-sync-compatible knowledge daemon.",
         "package_chip": (
             '<span class="chip">npm: '
             '<a href="https://www.npmjs.com/package/jonobones">jonobones</a> · '
@@ -83,9 +81,7 @@ PROJECTS = [
         "slug": "deco-assaying",
         "accent": "ac-red",
         "source": ("pypi", "deco-assaying"),
-        "registry_table": "PyPI · GHCR",
-        "license": "MIT OR Apache-2.0",
-        "tagline": "MCP server for source-code analysis via tree-sitter (Python/C/C++ initially, broader coverage planned).",
+        "registry_table": "PyPI · GHCR",        "tagline": "MCP server for source-code analysis via tree-sitter (Python/C/C++ initially, broader coverage planned).",
         "package_chip": '<span class="chip">PyPI: <a href="https://pypi.org/project/deco-assaying/">deco-assaying</a></span>',
         "install": "uvx deco-assaying",
         "summary": (
@@ -101,9 +97,7 @@ PROJECTS = [
         "slug": "flint-slating",
         "accent": "ac-blue",
         "source": ("pypi", "flint-slating"),
-        "registry_table": "PyPI · GHCR",
-        "license": "MIT",
-        "tagline": "MCP server that reads PDFs and exposes them as structured Markdown.",
+        "registry_table": "PyPI · GHCR",        "tagline": "MCP server that reads PDFs and exposes them as structured Markdown.",
         "package_chip": '<span class="chip">PyPI: <a href="https://pypi.org/project/flint-slating/">flint-slating</a></span>',
         "install": "uvx flint-slating",
         "summary": (
@@ -118,9 +112,7 @@ PROJECTS = [
         "slug": "smalt-mcp",
         "accent": "ac-yellow",
         "source": ("pypi", "smalt-mcp"),
-        "registry_table": "PyPI · GHCR",
-        "license": "MIT",
-        "tagline": "MCP wrapper around Smalt's storage surface (read / write / link / claim / search).",
+        "registry_table": "PyPI · GHCR",        "tagline": "MCP wrapper around Smalt's storage surface (read / write / link / claim / search).",
         "package_chip": '<span class="chip">PyPI: <a href="https://pypi.org/project/smalt-mcp/">smalt-mcp</a></span>',
         "install": "uvx smalt-mcp",
         "summary": (
@@ -135,9 +127,7 @@ PROJECTS = [
         "slug": "ebony-enriching",
         "accent": "ac-sage",
         "source": ("pypi", "ebony-enriching"),
-        "registry_table": "PyPI · GHCR",
-        "license": "MIT",
-        "tagline": "An MCP lab notebook — proposal / experiment / gap lifecycle.",
+        "registry_table": "PyPI · GHCR",        "tagline": "An MCP lab notebook — proposal / experiment / gap lifecycle.",
         "package_chip": '<span class="chip">PyPI: <a href="https://pypi.org/project/ebony-enriching/">ebony-enriching</a></span>',
         "install": "uvx ebony-enriching",
         "summary": (
@@ -387,29 +377,39 @@ def _gh_json(url):
 
 
 def _fetch_registry(kind, pkg):
-    """Return (version, iso_date) from PyPI/npm, or (None, None). Quiet — used for probing."""
+    """Return (version, iso_date, license) from PyPI/npm, or (None, None, None).
+
+    The license is the registry's own metadata — PyPI's PEP 639 `license_expression`
+    or npm's `license` — the single source of truth, never hardcoded here (so it tracks
+    relicenses the same way the version tracks releases). Quiet — used for probing too."""
     try:
         if kind == "pypi":
             d = _get_json(f"https://pypi.org/pypi/{pkg}/json")
-            ver = d["info"]["version"]
+            info = d["info"]
+            ver = info["version"]
             files = d["releases"].get(ver) or []
-            return ver, (files[0]["upload_time_iso_8601"][:10] if files else "")
+            date = files[0]["upload_time_iso_8601"][:10] if files else ""
+            lic = info.get("license_expression") or info.get("license") or ""
+            return ver, date, lic
         if kind == "npm":
             d = _get_json(f"https://registry.npmjs.org/{pkg}")
             ver = d["dist-tags"]["latest"]
-            return ver, (d.get("time", {}).get(ver) or "")[:10]
+            date = (d.get("time", {}).get(ver) or "")[:10]
+            vmeta = (d.get("versions") or {}).get(ver) or {}
+            lic = vmeta.get("license") or d.get("license") or ""
+            return ver, date, lic
     except Exception:  # noqa: BLE001
-        return None, None
-    return None, None
+        return None, None, None
+    return None, None, None
 
 
 def fetch_latest(project):
-    """Version for a curated project; prints on failure."""
+    """(version, date, license) for a curated project; prints on failure."""
     kind, pkg = project["source"]
-    ver, date = _fetch_registry(kind, pkg)
+    ver, date, lic = _fetch_registry(kind, pkg)
     if ver is None:
         print(f"  ! could not fetch {project['slug']} ({kind}:{pkg})", file=sys.stderr)
-    return ver, date
+    return ver, date, lic
 
 
 def fetch_release(slug):
@@ -447,7 +447,7 @@ def discover_extras(curated):
             continue
         ver = date = reg = None
         for kind in ("pypi", "npm"):
-            ver, date = _fetch_registry(kind, name)
+            ver, date, _lic = _fetch_registry(kind, name)
             if ver:
                 reg = "PyPI" if kind == "pypi" else "npm"
                 break
@@ -513,9 +513,10 @@ def md_to_html(md):
 def build_card(p):
     """One project card. Shows real GitHub release notes when present, else the
     README surface summary."""
-    chips = [
-        f'<span class="chip">Released {p["date"]}</span>',
-        f'<span class="chip">{p["license"]}</span>',
+    chips = [f'<span class="chip">Released {p["date"]}</span>']
+    if p.get("license"):
+        chips.append(f'<span class="chip">{p["license"]}</span>')
+    chips += [
         p["package_chip"],
         f'<span class="chip"><a href="https://github.com/{ORG}/{p["slug"]}/pkgs/container/{p["slug"]}">container image</a></span>',
     ]
@@ -584,15 +585,15 @@ def main():
     # Curated projects → full cards + table rows. Pull real release notes where published.
     projects = []
     for p in PROJECTS:
-        ver, date = fetch_latest(p)
+        ver, date, lic = fetch_latest(p)
         if ver is None:
             print(f"  ! aborting: missing data for {p['slug']}", file=sys.stderr)
             return 2
         rel = fetch_release(p["slug"])
-        proj = dict(p, version=ver, date=date, release=rel, has_changelog=has_changelog(p["slug"]))
+        proj = dict(p, version=ver, date=date, license=lic, release=rel, has_changelog=has_changelog(p["slug"]))
         projects.append(proj)
         notes = f"release notes {rel['tag']}" if rel else "README summary"
-        print(f"  {p['slug']:<16} {ver:<16} {date}   [{notes}]")
+        print(f"  {p['slug']:<16} {ver:<16} {date}  {lic or '—':<18} [{notes}]")
 
     # Other public org repos → table-only rows (or none, if all denylisted).
     extras = discover_extras({p["slug"] for p in PROJECTS})
