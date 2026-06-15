@@ -37,6 +37,8 @@ jobs:
         with:
           python-version: "3.13"
       - name: Build releases page + stamp dates
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # higher API rate limit for release-notes/discovery
         run: |
           python3 build.py            # render releases/index.html (no git commit)
           python3 scripts/stamp.py    # fill "This page updated on <date>" from git
