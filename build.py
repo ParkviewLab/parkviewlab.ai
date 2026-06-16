@@ -57,6 +57,22 @@ DENYLIST = {"parkviewlab.ai", "zoestum.ai", "handbook", "dev-tools", "pvl-dotvie
 # ---------------------------------------------------------------------------
 PROJECTS = [
     {
+        "slug": "conception-space",
+        "accent": "ac-cyan",
+        "source": ("github", "conception-space"),
+        "license": "AGPL-3.0-or-later",        # explicit — a GitHub-Release product, no registry to derive from
+        "registry_table": "GitHub Releases",
+        "tagline": "Organize your knowledge in space — a 3D, hand-placed graph where every node is a handle onto a real file.",
+        "package_chip": '<span class="chip">GitHub: <a href="https://github.com/ParkviewLab/conception-space/releases">Releases</a></span>',
+        "summary": (
+            "A desktop app for organizing knowledge in 3D space. You place nodes by hand at explicit\n"
+            "      coordinates, and each node is a <strong>handle onto a real file</strong> (usually a markdown\n"
+            "      note). Layout is not computed — you decide where things live — so the space is spatially\n"
+            "      memorable and you can see the shape of your relationships at a glance. Built with Electron +\n"
+            "      Three.js; runs on macOS, Windows, and Linux."
+        ),
+    },
+    {
         "slug": "jonobones",
         "accent": "ac-teal",
         "source": ("npm", "jonobones"),
@@ -247,6 +263,12 @@ SPDX-License-Identifier: LicenseRef-AllRightsReserved
   .ac-blue{--ac:var(--blue)}
   .ac-yellow{--ac:#c98a17}
   .ac-sage{--ac:#4f7d5a}
+  .ac-cyan{--ac:#0e7490}
+
+  .downloads{list-style:none;margin:8px 0 0;padding:0;}
+  .downloads li{font-size:13px;line-height:1.9;}
+  .downloads a{font-family:var(--mono);}
+  .dl-note{margin:10px 0 0;font-size:12px;color:var(--muted);}
 
   .note{margin-top:42px;padding:18px 20px;background:var(--paper-2);border:2px solid var(--ink);
         color:#3c4036;font-size:13px;line-height:1.6;}
@@ -343,7 +365,7 @@ TAIL = """
   </div>
 
   <footer>
-    <div>Versions sourced from PyPI and the npm registry · images on
+    <div>Versions sourced from PyPI, npm, and GitHub Releases · container images on
     <a href="https://github.com/orgs/ParkviewLab/packages">GHCR</a> · released via tag-driven CI on <code>v*</code> tags.</div>
     <div>__COPYRIGHT__ · <a href="mailto:__CONTACT__">__CONTACT__</a> · This page updated on __UPDATED__</div>
   </footer>
@@ -413,10 +435,23 @@ def fetch_latest(project):
 
 
 def fetch_release(slug):
-    """Latest GitHub Release for a repo, or None if it publishes none."""
+    """Latest GitHub Release for a repo, or None if it publishes none.
+
+    Also returns the published date and installer assets (download URLs) so a
+    GitHub-Release product (no PyPI/npm package) can source its version, date,
+    and per-OS download links from here."""
     d = _gh_json(f"https://api.github.com/repos/{ORG}/{slug}/releases/latest")
     if d and d.get("tag_name"):
-        return {"tag": d["tag_name"], "body": d.get("body") or "", "url": d.get("html_url") or ""}
+        return {
+            "tag": d["tag_name"],
+            "body": d.get("body") or "",
+            "url": d.get("html_url") or "",
+            "date": (d.get("published_at") or "")[:10],
+            "assets": [
+                {"name": a.get("name", ""), "url": a.get("browser_download_url", "")}
+                for a in (d.get("assets") or [])
+            ],
+        }
     return None
 
 
@@ -510,16 +545,47 @@ def md_to_html(md):
     return "\n      ".join(out)
 
 
+OS_LABELS = [
+    (".dmg", "macOS (Apple Silicon)"),
+    ("-setup.exe", "Windows"),
+    (".AppImage", "Linux · AppImage"),
+    (".deb", "Linux · Debian/Ubuntu"),
+]
+
+
+def download_section(p, rel):
+    """Per-OS installer links for a GitHub-Release (desktop) product, built from
+    the release assets — replaces the registry `install` + `docker pull` block."""
+    assets = (rel or {}).get("assets", [])
+    items, seen = [], set()
+    for suffix, label in OS_LABELS:
+        for a in assets:
+            if a["name"].endswith(suffix) and a["name"] not in seen:
+                seen.add(a["name"])
+                items.append(f'<li>{label}: <a href="{a["url"]}">{a["name"]}</a></li>')
+                break
+    if not items and rel:
+        items = [f'<li>See the <a href="{rel["url"]}">latest release</a>.</li>']
+    links = "\n      ".join(items)
+    return f"""<div class="section-label">Download v{p["version"]}</div>
+    <ul class="downloads">
+      {links}
+    </ul>
+    <p class="dl-note">Unsigned builds — your OS may warn on first launch. See the
+    <a href="https://github.com/{ORG}/{p["slug"]}#install">install notes</a>.</p>"""
+
+
 def build_card(p):
     """One project card. Shows real GitHub release notes when present, else the
-    README surface summary."""
+    README surface summary. A GitHub-Release product (no registry package) renders
+    per-OS download links instead of an `install` command + container image."""
+    is_download = p["source"][0] == "github"
     chips = [f'<span class="chip">Released {p["date"]}</span>']
     if p.get("license"):
         chips.append(f'<span class="chip">{p["license"]}</span>')
-    chips += [
-        p["package_chip"],
-        f'<span class="chip"><a href="https://github.com/{ORG}/{p["slug"]}/pkgs/container/{p["slug"]}">container image</a></span>',
-    ]
+    chips.append(p["package_chip"])
+    if not is_download:
+        chips.append(f'<span class="chip"><a href="https://github.com/{ORG}/{p["slug"]}/pkgs/container/{p["slug"]}">container image</a></span>')
     rel = p.get("release")
     if rel:
         chips.append(f'<span class="chip"><a href="{rel["url"]}">release notes</a></span>')
@@ -534,6 +600,14 @@ def build_card(p):
         label = "What this version provides"
         body = p["summary"]
 
+    if is_download:
+        bottom = download_section(p, rel)
+    else:
+        bottom = f"""<div class="section-label">Install</div>
+    <pre><code>{p["install"]}
+<span class="c"># or</span>
+docker pull ghcr.io/parkviewlab/{p["slug"]}:latest</code></pre>"""
+
     return f"""
   <!-- {p["slug"]} -->
   <div class="card {p["accent"]}">
@@ -546,10 +620,7 @@ def build_card(p):
     <div class="summary-box">
       {body}
     </div>
-    <div class="section-label">Install</div>
-    <pre><code>{p["install"]}
-<span class="c"># or</span>
-docker pull ghcr.io/parkviewlab/{p["slug"]}:latest</code></pre>
+    {bottom}
   </div>
 """
 
@@ -585,11 +656,18 @@ def main():
     # Curated projects → full cards + table rows. Pull real release notes where published.
     projects = []
     for p in PROJECTS:
-        ver, date, lic = fetch_latest(p)
-        if ver is None:
-            print(f"  ! aborting: missing data for {p['slug']}", file=sys.stderr)
-            return 2
         rel = fetch_release(p["slug"])
+        if p["source"][0] == "github":
+            # Desktop / installer product: version + date come from the GitHub Release.
+            if not rel:
+                print(f"  ! aborting: no GitHub release for {p['slug']}", file=sys.stderr)
+                return 2
+            ver, date, lic = rel["tag"].lstrip("v"), rel["date"], p.get("license", "")
+        else:
+            ver, date, lic = fetch_latest(p)
+            if ver is None:
+                print(f"  ! aborting: missing data for {p['slug']}", file=sys.stderr)
+                return 2
         proj = dict(p, version=ver, date=date, license=lic, release=rel, has_changelog=has_changelog(p["slug"]))
         projects.append(proj)
         notes = f"release notes {rel['tag']}" if rel else "README summary"
