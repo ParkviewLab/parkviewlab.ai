@@ -99,7 +99,7 @@ nav.site a:hover { color:var(--red); }
   border:1px solid #d4cab5; padding:3px 8px; letter-spacing:.02em;
 }
 .ac-teal{--ac:var(--teal-deep)} .ac-red{--ac:var(--red)} .ac-blue{--ac:var(--blue)}
-.ac-yellow{--ac:#c98a17} .ac-sage{--ac:#4f7d5a}
+.ac-yellow{--ac:#c98a17} .ac-sage{--ac:#4f7d5a} .ac-cyan{--ac:#0e7490}
 
 /* ---- Prose blocks ---- */
 .prose { max-width:720px; }

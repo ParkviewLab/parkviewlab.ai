@@ -46,6 +46,10 @@ UA = {"User-Agent": "parkviewlab-releases-builder"}
 COPYRIGHT = "Copyright © 2026 Gary Frattarola"
 CONTACT = "garyf@parkviewlab.ai"
 
+# Token in index.html's project grid, filled from PROJECTS at build time — keeps the
+# homepage's "The projects" cards in sync with the /releases/ page.
+HOME_TOKEN = "<!-- PROJECTS_CARDS -->"
+
 # Public org repos that are NOT shippable products, so they're never listed:
 # the websites themselves, the docs handbook, shared dev tooling, the desktop GUI.
 DENYLIST = {"parkviewlab.ai", "zoestum.ai", "handbook", "dev-tools", "pvl-dotview"}
@@ -625,6 +629,25 @@ docker pull ghcr.io/parkviewlab/{p["slug"]}:latest</code></pre>"""
 """
 
 
+def home_chips(p):
+    """Metadata chips for a compact homepage card: registry label(s) + license."""
+    labels = [s.strip() for s in p["registry_table"].split("·")]
+    if p.get("license"):
+        labels.append(p["license"])
+    return "".join(f'<span class="chip">{x}</span>' for x in labels)
+
+
+def build_home_card(p):
+    """Compact project card for the homepage grid (index.html), from the same PROJECTS
+    data as the releases page — so the two never drift."""
+    return f"""
+      <div class="card {p["accent"]}">
+        <h3><a href="https://github.com/{ORG}/{p["slug"]}">{p["slug"]}</a></h3>
+        <p>{p["tagline"]}</p>
+        <div class="chips">{home_chips(p)}</div>
+      </div>"""
+
+
 def human_date(d):
     # "June 1, 2026" — month name, no zero-padded day, portably.
     return f"{d:%B} {d.day}, {d.year}"
@@ -684,6 +707,18 @@ def main():
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(render(projects, extras, human_date(today)))
     print("\nwrote releases/index.html")
+
+    # Keep the homepage's "The projects" grid in sync with /releases/ — fill the same
+    # cards from PROJECTS in place (like stamp.py fills the date; the committed file keeps
+    # the placeholder, the deploy/preview copy gets the cards).
+    home_path = os.path.join(HERE, "index.html")
+    home = open(home_path, encoding="utf-8").read()
+    if HOME_TOKEN in home:
+        with open(home_path, "w", encoding="utf-8") as f:
+            f.write(home.replace(HOME_TOKEN, "".join(build_home_card(p) for p in projects)))
+        print("filled index.html project grid")
+    else:
+        print(f"  ! {HOME_TOKEN} not found in index.html", file=sys.stderr)
     return 0
 
 
