@@ -372,7 +372,7 @@ TAIL = """
   <footer>
     <div>Versions sourced from PyPI, npm, and GitHub Releases · container images on
     <a href="https://github.com/orgs/ParkviewLab/packages">GHCR</a> · released via tag-driven CI on <code>v*</code> tags.</div>
-    <div>__COPYRIGHT__ · <a href="mailto:__CONTACT__">__CONTACT__</a> · This page updated on __UPDATED__</div>
+    <div>__COPYRIGHT__ · <a href="mailto:__CONTACT__">__CONTACT__</a> · Updated __UPDATED__ from California, USA</div>
   </footer>
 </div>
 </body>
@@ -719,7 +719,10 @@ def main():
     home = open(home_path, encoding="utf-8").read()
     if HOME_TOKEN in home:
         with open(home_path, "w", encoding="utf-8") as f:
-            f.write(home.replace(HOME_TOKEN, "".join(build_home_card(p) for p in projects)))
+            f.write(
+                home.replace(HOME_TOKEN, "".join(build_home_card(p) for p in projects))
+                .replace("__UPDATED__", human_date(today))
+            )
         print("filled index.html project grid")
     else:
         print(f"  ! {HOME_TOKEN} not found in index.html", file=sys.stderr)
