@@ -37,6 +37,7 @@ import os
 import re
 import sys
 import urllib.request
+from zoneinfo import ZoneInfo
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ORG = "ParkviewLab"
@@ -673,8 +674,11 @@ def main():
     ap.add_argument("--check", action="store_true", help="report only; write nothing")
     args = ap.parse_args()
 
-    today = dt.date.today()
-    print(f"ParkviewLab releases build — {today.isoformat()}")
+    # Pacific time for the "updated" date: the deploy runs in a UTC CI runner,
+    # where dt.date.today() rolls over at UTC midnight (late afternoon PT) and
+    # would stamp tomorrow's date. America/Los_Angeles tracks PST/PDT for us.
+    today = dt.datetime.now(ZoneInfo("America/Los_Angeles")).date()
+    print(f"ParkviewLab releases build — {today.isoformat()} (PT)")
 
     # Curated projects → full cards + table rows. Pull real release notes where published.
     projects = []
