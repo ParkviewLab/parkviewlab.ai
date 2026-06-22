@@ -66,7 +66,7 @@ PROJECTS = [
         "source": ("github", "conception-space"),
         "license": "AGPL-3.0-or-later",        # explicit — a GitHub-Release product, no registry to derive from
         "registry_table": "GitHub Releases",
-        "tagline": "Organize your knowledge in space — a 3D, hand-placed graph where every node is a handle onto a real file.",
+        "tagline": "Build and navigate 3D spaces for thinking. Hand-place and sculpt ideas. See unplanned connections.",
         "package_chip": '<span class="chip">GitHub: <a href="https://github.com/ParkviewLab/conception-space/releases">Releases</a></span>',
         "summary": (
             "A desktop app for organizing knowledge in 3D space. You place nodes by hand at explicit\n"
