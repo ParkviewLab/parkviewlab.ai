@@ -159,6 +159,24 @@ PROJECTS = [
             "      Five operating modes — uvx, uv tool install, launchd, systemd, and Docker/GHCR."
         ),
     },
+    {
+        "slug": "pensa-grex",
+        "accent": "ac-violet",
+        "source": ("github", "pensa-grex"),
+        "license": "AGPL-3.0-or-later",        # explicit — a GitHub-Release product, no registry to derive from
+        "registry_table": "GitHub Releases",
+        "tagline": "Track what you're doing as a forest of task trees. Push, pop, and fork stacks. See your work as a subway map.",
+        "package_chip": '<span class="chip">GitHub: <a href="https://github.com/ParkviewLab/pensa-grex/releases">Releases</a></span>',
+        "summary": (
+            "A Googie-themed desktop app that tracks what you are doing as a <strong>forest of task trees</strong>,\n"
+            "      one forest per domain (HomeLab, Work, and so on). You push a task onto the tip of a stack, pop it\n"
+            "      when done, and fork a parallel stack when work diverges; a cursor you set by hand (\"here\") marks\n"
+            "      where you are on each branch. The forest is drawn as a <strong>subway map</strong> — stations are\n"
+            "      tasks, tracks are stacks, a junction is a fork — with outline colour following status and a markdown\n"
+            "      note on every task. A forest is plain files on disk: one JSON5 file per domain beside its per-task\n"
+            "      markdown notes. Built with Electron; runs on macOS, Windows, and Linux."
+        ),
+    },
 ]
 
 # ---------------------------------------------------------------------------
@@ -269,6 +287,7 @@ SPDX-License-Identifier: LicenseRef-AllRightsReserved
   .ac-yellow{--ac:#c98a17}
   .ac-sage{--ac:#4f7d5a}
   .ac-cyan{--ac:#0e7490}
+  .ac-violet{--ac:#7d54a6}
 
   .downloads{list-style:none;margin:8px 0 0;padding:0;}
   .downloads li{font-size:13px;line-height:1.9;}
