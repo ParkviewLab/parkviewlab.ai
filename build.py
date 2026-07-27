@@ -67,6 +67,7 @@ PROJECTS = [
         "source": ("github", "conception-space"),
         "license": "AGPL-3.0-or-later",        # explicit — a GitHub-Release product, no registry to derive from
         "registry_table": "GitHub Releases",
+        "signing_note": "The macOS build is signed and notarized; the Windows and Linux builds are unsigned, so those may warn on first launch.",
         "tagline": "Build and navigate 3D spaces for thinking. Hand-place and sculpt ideas. See unplanned connections.",
         "package_chip": '<span class="chip">GitHub: <a href="https://github.com/ParkviewLab/conception-space/releases">Releases</a></span>',
         "summary": (
@@ -165,16 +166,20 @@ PROJECTS = [
         "source": ("github", "pensa-grex"),
         "license": "AGPL-3.0-or-later",        # explicit — a GitHub-Release product, no registry to derive from
         "registry_table": "GitHub Releases",
-        "tagline": "Track what you're doing as a forest of task trees. Push, pop, and fork stacks. See your work as a subway map.",
+        "signing_note": "The macOS build is signed and notarized; the Windows and Linux builds are unsigned, so those may warn on first launch.",
+        "tagline": "Track what you're doing as project plans, drawn as a subway map. Parallel work branches and rejoins. A local agent can edit the map with you.",
         "package_chip": '<span class="chip">GitHub: <a href="https://github.com/ParkviewLab/pensa-grex/releases">Releases</a></span>',
         "summary": (
-            "A Googie-themed desktop app that tracks what you are doing as a <strong>forest of task trees</strong>,\n"
-            "      one forest per domain (HomeLab, Work, and so on). You push a task onto the tip of a stack, pop it\n"
-            "      when done, and fork a parallel stack when work diverges; a cursor you set by hand (\"here\") marks\n"
-            "      where you are on each branch. The forest is drawn as a <strong>subway map</strong> — stations are\n"
-            "      tasks, tracks are stacks, a junction is a fork — with outline colour following status and a markdown\n"
-            "      note on every task. A forest is plain files on disk: one JSON5 file per domain beside its per-task\n"
-            "      markdown notes. Built with Electron; runs on macOS, Windows, and Linux."
+            "A Googie-themed desktop app that keeps what you are doing as a live set of <strong>project plans</strong>,\n"
+            "      gathered one domain at a time (HomeLab, Work, and so on). A plan opens at a project node and closes at a\n"
+            "      terminus, and everything in it happens between the two: you insert a task where it belongs on the line,\n"
+            "      wrap a run of tasks to name it as a sub-project, and open a branch where part of the work runs alongside\n"
+            "      the rest — a branch always rejoins the line it left. A domain is drawn as a <strong>subway map</strong>:\n"
+            "      stations are nodes, tracks are the lines between them, a junction is where a branch leaves or returns,\n"
+            "      with outline colour following status and a markdown note on every node. An <strong>in-app MCP server</strong>\n"
+            "      on loopback lets a local agent read and edit those same plans through the same authority the interface\n"
+            "      uses, and the map updates as it works. A domain is plain files on disk: one JSON file in a directory of\n"
+            "      its own, beside its per-node markdown notes. Built with Electron; runs on macOS, Windows, and Linux."
         ),
     },
 ]
@@ -591,11 +596,15 @@ def download_section(p, rel):
     if not items and rel:
         items = [f'<li>See the <a href="{rel["url"]}">latest release</a>.</li>']
     links = "\n      ".join(items)
+    # What the first launch will actually do, which differs per platform once a project
+    # signs. The default assumes nothing is signed; a project that signs says so itself,
+    # so adding a product never silently claims a signature it doesn't have.
+    note = p.get("signing_note") or "Unsigned builds — your OS may warn on first launch."
     return f"""<div class="section-label">Download v{p["version"]}</div>
     <ul class="downloads">
       {links}
     </ul>
-    <p class="dl-note">Unsigned builds — your OS may warn on first launch. See the
+    <p class="dl-note">{note} See the
     <a href="https://github.com/{ORG}/{p["slug"]}#install">install notes</a>.</p>"""
 
 
