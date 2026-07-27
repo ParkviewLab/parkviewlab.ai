@@ -167,7 +167,7 @@ PROJECTS = [
         "license": "AGPL-3.0-or-later",        # explicit — a GitHub-Release product, no registry to derive from
         "registry_table": "GitHub Releases",
         "signing_note": "The macOS build is signed and notarized; the Windows and Linux builds are unsigned, so those may warn on first launch.",
-        "tagline": "Track what you're doing as project plans, drawn as a subway map. Parallel work branches and rejoins. A local agent can edit the map with you.",
+        "tagline": "Track what you're doing as project plans, drawn as an interactive map. Parallel work branches and rejoins. A local agent can edit the map with you.",
         "package_chip": '<span class="chip">GitHub: <a href="https://github.com/ParkviewLab/pensa-grex/releases">Releases</a></span>',
         "summary": (
             "A Googie-themed desktop app that keeps what you are doing as a live set of <strong>project plans</strong>,\n"
