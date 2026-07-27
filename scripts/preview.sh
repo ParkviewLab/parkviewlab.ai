@@ -20,6 +20,10 @@ trap 'rm -rf "$OUT"' EXIT
 rsync -a --exclude '.git' "$ROOT"/ "$OUT"/
 
 # Build the releases page (fresh) and stamp the page dates from ROOT's git history.
+# Unauthenticated, the GitHub API allows 60 calls an hour per address and build.py
+# aborts the whole build on a failed call, which a couple of previews can provoke.
+# Borrow the gh CLI's token when there is one; the deploy passes its own.
+export GITHUB_TOKEN="${GITHUB_TOKEN:-$(gh auth token 2>/dev/null || true)}"
 ( cd "$OUT" && python3 build.py )
 python3 "$ROOT/scripts/stamp.py" --dir "$OUT" --git-dir "$ROOT"
 
