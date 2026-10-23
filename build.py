@@ -63,6 +63,7 @@ DENYLIST = {"parkviewlab.ai", "zoestum.ai", "handbook", "dev-tools", "pvl-dotvie
 PROJECTS = [
     {
         "slug": "scrinotia",
+        "download_url": "https://parkviewlab.github.io/scrinotia/downloads/",
         "accent": "ac-blue",
         "source": ("github", "scrinotia"),
         "license": "AGPL-3.0-or-later",        # explicit — a GitHub-Release product, no registry to derive from
@@ -182,6 +183,7 @@ PROJECTS = [
     },
     {
         "slug": "pensa-grex",
+        "download_url": "https://parkviewlab.github.io/pensa-grex/downloads/",
         "accent": "ac-violet",
         "source": ("github", "pensa-grex"),
         "license": "AGPL-3.0-or-later",        # explicit — a GitHub-Release product, no registry to derive from
@@ -686,12 +688,19 @@ def home_chips(p):
     return "".join(f'<span class="chip">{x}</span>' for x in labels)
 
 
+def download_link(p):
+    """A product with a download page gets a "download" link at the right of its
+    card's title line; the title itself keeps linking to the repository."""
+    url = p.get("download_url")
+    return f'<a class="card-download" href="{url}">download</a>' if url else ""
+
+
 def build_home_card(p):
     """Compact project card for the homepage grid (index.html), from the same PROJECTS
     data as the releases page — so the two never drift."""
     return f"""
       <div class="card {p["accent"]}">
-        <h3><a href="https://github.com/{ORG}/{p["slug"]}">{p["slug"]}</a></h3>
+        <h3{' class="with-download"' if p.get("download_url") else ""}><a href="https://github.com/{ORG}/{p["slug"]}">{p["slug"]}</a>{download_link(p)}</h3>
         <p>{p["tagline"]}</p>
         <div class="chips">{home_chips(p)}</div>
       </div>"""
