@@ -92,6 +92,9 @@ nav.site a:hover { color:var(--red); }
 .card h3 { font-family:var(--display); font-size:15px; margin:6px 0 0; letter-spacing:.01em; }
 .card h3 a { color:var(--ink); text-decoration:none; }
 .card h3 a:hover { color:var(--ac,var(--red)); }
+.card h3.with-download { display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+.card h3 a.card-download { font-family:var(--sans); font-size:13px; color:var(--ac,var(--red)); }
+.card h3 a.card-download:hover { text-decoration:underline; }
 .card p { font-size:14.5px; color:var(--muted); margin:12px 0 14px; }
 .card .chips { display:flex; gap:8px; flex-wrap:wrap; }
 .chip {
