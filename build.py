@@ -62,6 +62,26 @@ DENYLIST = {"parkviewlab.ai", "zoestum.ai", "handbook", "dev-tools", "pvl-dotvie
 # ---------------------------------------------------------------------------
 PROJECTS = [
     {
+        "slug": "scrinotia",
+        "accent": "ac-blue",
+        "source": ("github", "scrinotia"),
+        "license": "AGPL-3.0-or-later",        # explicit — a GitHub-Release product, no registry to derive from
+        "registry_table": "GitHub Releases",
+        "signing_note": "The macOS build is signed and notarized; the Windows and Linux builds are unsigned, so those may warn on first launch.",
+        "tagline": "A local-first, utilitarian Markdown notes client. Opens your vault without altering it; edit beside a live preview.",
+        "package_chip": '<span class="chip">GitHub: <a href="https://github.com/ParkviewLab/scrinotia/releases">Releases</a></span>',
+        "summary": (
+            "A desktop notes client for a <strong>vault</strong>: a folder of plain Markdown files on your own disk,\n"
+            "      with no account and no cloud. Opening a vault changes nothing in it; notes are saved only when you edit\n"
+            "      them, with their frontmatter and line endings kept exactly. Read a note as rendered, or edit it in a\n"
+            "      <strong>split view</strong> with the source beside a preview that scrolls with it. Wikilinks complete as you\n"
+            "      type, with backlinks, unlinked mentions and embedded notes, and links are rewritten when a note is renamed\n"
+            "      or moved. The preview renders math, Mermaid diagrams, coloured code, PDFs, audio, video and 3D models, and\n"
+            "      table views of <code>.base</code> files; full-text search covers the whole vault. Built with Electron; runs\n"
+            "      on macOS, Windows, and Linux."
+        ),
+    },
+    {
         "slug": "conception-space",
         "accent": "ac-cyan",
         "source": ("github", "conception-space"),
