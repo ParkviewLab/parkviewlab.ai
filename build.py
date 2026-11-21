@@ -83,6 +83,26 @@ PROJECTS = [
         ),
     },
     {
+        "slug": "garnet-scoping",
+        "download_url": "https://parkviewlab.github.io/garnet-scoping/downloads/",
+        "accent": "ac-red",
+        "source": ("github", "garnet-scoping"),
+        "license": "AGPL-3.0-or-later",        # explicit — a GitHub-Release product, no registry to derive from
+        "registry_table": "GitHub Releases",
+        "signing_note": "The macOS build is signed and notarized; the Linux builds are unsigned.",
+        "tagline": "See what your Claude Code agent is doing, and work with it on a shared board.",
+        "package_chip": '<span class="chip">GitHub: <a href="https://github.com/ParkviewLab/garnet-scoping/releases">Releases</a></span>',
+        "summary": (
+            "A desktop companion to Claude Code. For each session it shows a <strong>Desk</strong>: the agent's plan,\n"
+            "      the step it is on, what it waits on, its last word and every turn, read from what Claude Code records\n"
+            "      rather than from the agent's account; and a <strong>board</strong> on which you and the agent draw, place\n"
+            "      mock-ups and ask questions where they apply. Mark any step to discuss, ask an aside, or hold the agent\n"
+            "      at a step boundary: your signals reach the session without a message, and nothing in progress is\n"
+            "      cancelled. A built-in manual teaches each feature on a demo session. Built with Electron; runs on\n"
+            "      macOS and Linux."
+        ),
+    },
+    {
         "slug": "conception-space",
         "accent": "ac-cyan",
         "source": ("github", "conception-space"),
